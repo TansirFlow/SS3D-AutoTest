@@ -2,6 +2,8 @@ import json
 import re
 import socket
 import subprocess
+import os
+import time
 
 class Main:
     def __init__(self):
@@ -14,9 +16,9 @@ class Main:
         self.time=None
         self.score_left=0
         self.score_right=0
-        self.rcssserver3d=None
-        self.left_team=None
-        self.right_team=None
+        self.rcssserver3d_proc=None
+        self.left_team_proc=None
+        self.right_team_proc=None
 
     def init_monitor_socket(self):
         config = self.get_config()
@@ -29,14 +31,21 @@ class Main:
             print("发生错误：", e)
             exit(-1)
 
+    def kill_rcssserver3d(self):
+        os.system("pkill rcssserver3d -9")
+
     def run_rcssserver3d(self):
-        server_proc = subprocess.Popen(["rcssserver"])
+        self.rcssserver3d_proc = subprocess.Popen(['rcssserver3d'], 
+                                    stdout=subprocess.DEVNULL, 
+                                    stderr=subprocess.DEVNULL)
+        time.sleep(1)
 
-    def run_left_team(self):
-        pass
-
-    def run_right_team(self):
-        pass
+    def run_team(self,binary_path):
+        original_dir = os.getcwd()
+        script_dir = os.path.dirname(os.path.abspath(binary_path))
+        os.chdir(script_dir)
+        os.system('bash start.sh localhost')
+        os.chdir(original_dir)
 
     def receive(self):
         try:
@@ -85,9 +94,16 @@ class Main:
 
 if __name__ == '__main__':
     m = Main()
+    m.run_rcssserver3d()
+    m.run_team("./binary/Apollo3D_MNGA/start.sh")
+    time.sleep(3)
+    m.run_team("./binary/IFI-1_5.19/start.sh")
+    time.sleep(3)
     m.init_monitor_socket()
     m.send(b"(reqfullstate)")
+    count=0
     while True:
+        count+=1
         text = m.receive()
         m.parse(text.decode('ascii'))
         print(f"\rplayMode:{m.play_mode},time:{m.time},score_left:{m.score_left},score_right:{m.score_right}",end='')
@@ -96,3 +112,6 @@ if __name__ == '__main__':
                 m.send(b"(playMode KickOff_Left)")
             else:
                 m.send(b"(playMode KickOff_Right)")
+        if count>1000:
+            break
+    m.kill_rcssserver3d()
