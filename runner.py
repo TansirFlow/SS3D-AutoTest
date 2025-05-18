@@ -115,7 +115,7 @@ class Runner:
                 text = self.receive()
                 if text is None:
                     return None
-                self.parse(text.decode('ascii'))
+                self.parse(text.decode('utf-8'))
                 print(f"\rplayMode:{self.play_mode},time:{self.time},score_left:{self.score_left},score_right:{self.score_right}",end='')
                 if self.play_mode == "BeforeKickOff":
                     if self.time==0:
@@ -135,7 +135,7 @@ class Runner:
                 text = self.receive()
                 if text is None:
                     return None
-                self.parse(text.decode('ascii'))
+                self.parse(text.decode('utf-8'))
                 print(f"\rplayMode:{self.play_mode},time:{self.time},score_left:{self.score_left},score_right:{self.score_right}",end='', flush=True)
                 if self.play_mode == "BeforeKickOff":
                     if self.time==0:
@@ -157,7 +157,7 @@ class Runner:
                 text = self.receive()
                 if text is None:
                     return None
-                self.parse(text.decode('ascii'))
+                self.parse(text.decode('utf-8'))
                 print(f"\rplayMode:{self.play_mode},time:{self.time},score_left:{self.score_left},score_right:{self.score_right}",end='')
                 if self.play_mode == "BeforeKickOff":
                     if self.time==0:
@@ -179,9 +179,10 @@ if __name__ == '__main__':
     opp_binary_list=[os.path.join(opp_binary_dir, name) for name in os.listdir(opp_binary_dir) if os.path.isdir(os.path.join(opp_binary_dir, name))]
     print(our_binary_list)
     print(opp_binary_list)
+    print()
     r=Runner()
     max_retry_times=2   # 比赛出现问题时的最大重试次数
-    every_play_times=1  # 每个对抗打几次
+    every_play_times=2  # 每个对抗打几次
     exchange=True       # 是否换边
     our_left=True       # 我方在左还是右(只在不换边对打才有意义)
 
@@ -213,13 +214,15 @@ if __name__ == '__main__':
         single_bin_loss_count=0
         single_bin_error_count=0
         for opp_bin in opp_binary_list:
+            print(f"{our_bin} vs {opp_bin}")
             row=[our_bin,opp_bin]
             useful_count=0
             win_count=0
             tie_count=0
             loss_count=0
             error_count=0
-            for _ in range(every_play_times):
+            for a in range(every_play_times):
+                print(f"第{a+1}轮对局")
                 retry_times=0
                 result=None
                 if our_left:
@@ -252,6 +255,7 @@ if __name__ == '__main__':
                         tie_count+=1
                     else:
                         loss_count+=1
+                print()
             row.extend([win_count,tie_count,loss_count,error_count,f"{round(100*win_count/useful_count,2)}%"])
             with open(f"{time_str}-detail.csv","a",newline="", encoding="utf-8") as f:
                 w=csv.writer(f)
